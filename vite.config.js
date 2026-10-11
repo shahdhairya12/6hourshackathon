@@ -10,6 +10,8 @@ export default defineConfig({
   ],
   build: {
     target: 'esnext',
+    cssCodeSplit: true,
+    reportCompressedSize: true,
     rollupOptions: {
       output: {
         manualChunks(id) {

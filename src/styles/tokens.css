@@ -1,0 +1,144 @@
+/* ============================================================================
+   PULSE // OS — Aurora Obsidian Theme Tokens
+   Deep near-black canvas lit by a violet + teal aurora.
+   ========================================================================== */
+
+@theme {
+  /* --- Aurora accent: primary violet -------------------------------------- */
+  --color-violet-400: #a78bfa;
+  --color-violet-500: #8b5cf6;
+  --color-violet-600: #7c3aed;
+
+  /* --- Aurora accent: secondary teal (remaps Tailwind cyan) --------------- */
+  --color-cyan-50: #f0fdfa;
+  --color-cyan-100: #ccfbf1;
+  --color-cyan-200: #99f6e4;
+  --color-cyan-300: #5eead4;
+  --color-cyan-400: #2dd4bf;
+  --color-cyan-500: #14b8a6;
+  --color-cyan-600: #0d9488;
+  --color-cyan-700: #0f766e;
+  --color-cyan-800: #115e59;
+  --color-cyan-900: #134e4a;
+  --color-cyan-950: #042f2e;
+
+  /* --- Aurora surface scale (usable as bg-surface / border-elevated, etc.) - */
+  --color-canvas: #05060b;
+  --color-inset: #070a12;
+  --color-surface: #0b0f1a;
+  --color-surface-2: #0d1120;
+  --color-surface-3: #121728;
+  --color-elevated: #121728;
+  --color-hairline: rgba(255, 255, 255, 0.08);
+
+  /* --- Aurora brand accents ----------------------------------------------- */
+  --color-amber-500: #f59e0b;
+  --color-rose-500: #f43f5e;
+  --color-emerald-500: #10b981;
+
+  /* --- Status colors ------------------------------------------------------ */
+  --color-status-emerald: #10b981;
+  --color-status-amber: #f59e0b;
+  --color-status-rose: #f43f5e;
+}
+
+:root {
+  /* --- Canvas & surfaces -------------------------------------------------- */
+  --bg-base: #05060b;
+  --bg-base-alt: #070a12;
+  --bg-inset: #070a12;
+  --bg-surface: #0b0f1a;
+  --bg-surface-2: #0d1120;
+  --bg-surface-3: #121728;
+  --bg-deep: #04050a;
+  --bg-nav: #05060b;
+  --bg-deepest: #070a12;
+  --bg-well: #080b14;
+  --bg-range-track: #171b28;
+  --bg-card-solid: #0d1120;
+  --bg-elevated: #121728;
+  --bg-glass: rgba(11, 15, 26, 0.66);
+  --bg-glass-strong: rgba(14, 18, 32, 0.82);
+
+  /* Surface scale aliases (semantic names used by components) */
+  --surface-canvas: var(--bg-base);
+  --surface-inset: var(--bg-inset);
+  --surface: var(--bg-surface);
+  --surface-2: var(--bg-surface-2);
+  --surface-3: var(--bg-surface-3);
+  --surface-elevated: var(--bg-elevated);
+
+  /* --- Aurora brand ------------------------------------------------------- */
+  --aurora-violet: #8b5cf6;
+  --aurora-violet-soft: rgba(139, 92, 246, 0.14);
+  --aurora-violet-deep: #7c3aed;
+  --aurora-violet-bright: #9061ff;
+  --aurora-indigo: #6366f1;
+  --aurora-teal: #2dd4bf;
+  --aurora-teal-soft: rgba(45, 212, 191, 0.14);
+  --aurora-cyan: #2dd4bf;
+  --aurora-cyan-deep: #14b8a6;
+
+  /* --- Status ------------------------------------------------------------- */
+  --status-emerald: #10b981;
+  --status-amber: #f59e0b;
+  --status-rose: #f43f5e;
+  --status-rose-soft: #fda4af;
+  --status-emerald-soft: #6ee7b7;
+  --status-orange: #f97316;
+  --status-red: #ef4444;
+  --status-pink: #ec4899;
+  --status-green: #22c55e;
+
+  /* --- Neutral scale ------------------------------------------------------ */
+  --color-white: #ffffff;
+  --color-light-200: #c3cbdd;
+
+  /* --- Borders ------------------------------------------------------------ */
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.17);
+  --border-specular: rgba(255, 255, 255, 0.24);
+
+  /* --- Button tokens ------------------------------------------------------ */
+  --btn-primary-grad-top: #9061ff;
+  --btn-primary-grad-bottom: #7c3aed;
+  --btn-primary-text: #ffffff;
+  --btn-danger-bg: rgba(244, 63, 94, 0.12);
+  --btn-danger-bg-hover: rgba(244, 63, 94, 0.2);
+  --btn-danger-text: var(--status-rose-soft);
+  --btn-danger-border: rgba(244, 63, 94, 0.3);
+  --btn-danger-border-hover: rgba(244, 63, 94, 0.55);
+  --btn-success-bg: rgba(16, 185, 129, 0.12);
+  --btn-success-bg-hover: rgba(16, 185, 129, 0.2);
+  --btn-success-text: var(--status-emerald-soft);
+  --btn-success-border: rgba(16, 185, 129, 0.3);
+  --btn-success-border-hover: rgba(16, 185, 129, 0.55);
+
+  /* --- Control tokens ----------------------------------------------------- */
+  --range-track: var(--bg-range-track);
+  --range-thumb-border: var(--color-white);
+  --tab-pill-active-text: var(--color-white);
+
+  /* --- Gradients ---------------------------------------------------------- */
+  --grad-surface-fade: linear-gradient(180deg, var(--bg-surface-3) 0%, var(--bg-surface) 100%);
+  --grad-text: linear-gradient(180deg, var(--color-white) 0%, var(--color-light-200) 100%);
+
+  /* --- Text --------------------------------------------------------------- */
+  --text-primary: #eef2f8;
+  --text-secondary: #94a3b8;
+  --text-muted: #5b6678;
+
+  /* --- Radii -------------------------------------------------------------- */
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 18px;
+  --r-xl: 24px;
+
+  /* --- Type --------------------------------------------------------------- */
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-heading: 'Outfit', var(--font-sans);
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}

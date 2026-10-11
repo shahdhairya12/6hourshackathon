@@ -1,0 +1,13 @@
+/* ============================================================================
+   PULSE // OS — Design system entry point
+   Aurora Obsidian theme
+
+   Layer order: tokens -> base -> components -> Tailwind utilities.
+   Tailwind is imported last so utility classes can override component
+   classes without `!important`.
+   ========================================================================== */
+
+@import "./tokens.css";
+@import "./base.css";
+@import "./components.css";
+@import "tailwindcss";

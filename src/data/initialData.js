@@ -19,9 +19,9 @@ export const PERSONAS = [
       { id: 's3', name: 'Gym / Badminton Court Pass', amount: 399, dueDay: 1, active: true, icon: '🏋️', category: 'health' },
     ],
     savingsGoals: [
-      { id: 'g1', name: 'Coldplay / Fest Ticket', target: 2500, current: 800, deadlineDay: 28, icon: '🎫', color: '#8B5CF6' },
-      { id: 'g2', name: 'Emergency No-Panic Buffer', target: 1500, current: 700, deadlineDay: 30, icon: '🛡️', color: '#10B981' },
-      { id: 'g3', name: 'Sneakers / Drop', target: 2000, current: 300, deadlineDay: 25, icon: '👟', color: '#06B6D4' },
+      { id: 'g1', name: 'Coldplay / Fest Ticket', target: 2500, current: 800, deadlineDay: 28, icon: '🎫', color: 'var(--aurora-violet)' },
+      { id: 'g2', name: 'Emergency No-Panic Buffer', target: 1500, current: 700, deadlineDay: 30, icon: '🛡️', color: 'var(--status-emerald)' },
+      { id: 'g3', name: 'Sneakers / Drop', target: 2000, current: 300, deadlineDay: 25, icon: '👟', color: 'var(--aurora-cyan-deep)' },
     ],
     initialTransactions: [
       { id: 't1', day: 1, name: 'Monthly Budget Allocated', amount: 10000, type: 'income', category: 'budget', note: 'Family allowance' },
@@ -50,9 +50,9 @@ export const PERSONAS = [
       { id: 's3', name: 'Figma Community Pack share', amount: 249, dueDay: 7, active: true, icon: '🎨', category: 'work' },
     ],
     savingsGoals: [
-      { id: 'g1', name: 'Noise-Cancelling Earbuds', target: 2200, current: 600, deadlineDay: 27, icon: '🎧', color: '#06B6D4' },
-      { id: 'g2', name: 'Emergency No-Panic Buffer', target: 1500, current: 900, deadlineDay: 30, icon: '🛡️', color: '#10B981' },
-      { id: 'g3', name: 'Weekend Coorg Trek', target: 2000, current: 400, deadlineDay: 22, icon: '⛺', color: '#F59E0B' },
+      { id: 'g1', name: 'Noise-Cancelling Earbuds', target: 2200, current: 600, deadlineDay: 27, icon: '🎧', color: 'var(--aurora-cyan-deep)' },
+      { id: 'g2', name: 'Emergency No-Panic Buffer', target: 1500, current: 900, deadlineDay: 30, icon: '🛡️', color: 'var(--status-emerald)' },
+      { id: 'g3', name: 'Weekend Coorg Trek', target: 2000, current: 400, deadlineDay: 22, icon: '⛺', color: 'var(--status-amber)' },
     ],
     initialTransactions: [
       { id: 't1', day: 1, name: 'Stipend Credited', amount: 10000, type: 'income', category: 'budget', note: 'Monthly design stipend' },
@@ -80,9 +80,9 @@ export const PERSONAS = [
       { id: 's3', name: 'Epidemic Sound Royalty Beats', amount: 299, dueDay: 19, active: true, icon: '🎧', category: 'work' },
     ],
     savingsGoals: [
-      { id: 'g1', name: 'Fast 1TB SSD & Hub', target: 2800, current: 950, deadlineDay: 26, icon: '💾', color: '#8B5CF6' },
-      { id: 'g2', name: 'Emergency No-Panic Buffer', target: 1500, current: 1100, deadlineDay: 30, icon: '🛡️', color: '#10B981' },
-      { id: 'g3', name: 'Vintage Leather Jacket', target: 1800, current: 200, deadlineDay: 30, icon: '🧥', color: '#EC4899' },
+      { id: 'g1', name: 'Fast 1TB SSD & Hub', target: 2800, current: 950, deadlineDay: 26, icon: '💾', color: 'var(--aurora-violet)' },
+      { id: 'g2', name: 'Emergency No-Panic Buffer', target: 1500, current: 1100, deadlineDay: 30, icon: '🛡️', color: 'var(--status-emerald)' },
+      { id: 'g3', name: 'Vintage Leather Jacket', target: 1800, current: 200, deadlineDay: 30, icon: '🧥', color: 'var(--status-pink)' },
     ],
     initialTransactions: [
       { id: 't1', day: 1, name: 'Retainer Payout Credited', amount: 10000, type: 'income', category: 'budget', note: 'Freelance video contract' },
@@ -249,13 +249,13 @@ export const CURVEBALL_EVENTS = [
 ];
 
 export const CATEGORIES = [
-  { id: 'food', label: 'Food & Dining', color: '#F59E0B', icon: '🍔' },
-  { id: 'living', label: 'Rent & Living', color: '#3B82F6', icon: '🏠' },
-  { id: 'commute', label: 'Transit & Commute', color: '#10B981', icon: '🚇' },
-  { id: 'utilities', label: 'Bills & Utilities', color: '#6366F1', icon: '⚡' },
-  { id: 'entertainment', label: 'Fun & Entertainment', color: '#EC4899', icon: '🎬' },
-  { id: 'shopping', label: 'Shopping & Gear', color: '#8B5CF6', icon: '🛍️' },
-  { id: 'health', label: 'Health & Fitness', color: '#14B8A6', icon: '💊' },
-  { id: 'unexpected', label: 'Curveballs & Emergencies', color: '#EF4444', icon: '⚠️' },
-  { id: 'windfall', label: 'Extra Income / Windfalls', color: '#22C55E', icon: '💰' },
+  { id: 'food', label: 'Food & Dining', color: 'var(--status-amber)', icon: '🍔' },
+  { id: 'living', label: 'Rent & Living', color: 'var(--aurora-cyan-deep)', icon: '🏠' },
+  { id: 'commute', label: 'Transit & Commute', color: 'var(--status-emerald)', icon: '🚇' },
+  { id: 'utilities', label: 'Bills & Utilities', color: 'var(--aurora-indigo)', icon: '⚡' },
+  { id: 'entertainment', label: 'Fun & Entertainment', color: 'var(--status-pink)', icon: '🎬' },
+  { id: 'shopping', label: 'Shopping & Gear', color: 'var(--aurora-violet)', icon: '🛍️' },
+  { id: 'health', label: 'Health & Fitness', color: 'var(--aurora-cyan-deep)', icon: '💊' },
+  { id: 'unexpected', label: 'Curveballs & Emergencies', color: 'var(--status-red)', icon: '⚠️' },
+  { id: 'windfall', label: 'Extra Income / Windfalls', color: 'var(--status-green)', icon: '💰' },
 ];

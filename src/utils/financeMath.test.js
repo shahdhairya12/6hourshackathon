@@ -10,7 +10,12 @@ import {
   calculateFinancialRisk,
   calculateFinancialHealth,
   calculateGamification,
-  runMonteCarloStressTest
+  runMonteCarloStressTest,
+  getRiskStatusTier,
+  getHealthStatusTier,
+  calculateTransactionTotals,
+  calculateTotalLockedSavings,
+  calculateTotalSavingsTarget
 } from './financeMath';
 
 describe('PULSE Finance Mathematical Engine', () => {
@@ -32,6 +37,19 @@ describe('PULSE Finance Mathematical Engine', () => {
       // 10000 - 450 - 350 - 1700 = 7500
       expect(calculateLiquidBalance(transactions, savings)).toBe(7500);
     });
+
+    it('handles negative liquid balances when expenses exceed income', () => {
+      const transactions = [
+        { amount: 5000, type: 'income' },
+        { amount: 7000, type: 'expense' }
+      ];
+      expect(calculateLiquidBalance(transactions, [])).toBe(-2000);
+    });
+
+    it('handles empty parameters safely with fallbacks', () => {
+      expect(calculateLiquidBalance([], [])).toBe(0);
+      expect(calculateLiquidBalance(undefined, undefined)).toBe(0);
+    });
   });
 
   describe('calculatePendingCommitments & Subscriptions', () => {
@@ -49,10 +67,15 @@ describe('PULSE Finance Mathematical Engine', () => {
       const subscriptions = [
         { name: 'Spotify', amount: 119, dueDay: 8, active: true },
         { name: 'Netflix', amount: 199, dueDay: 15, active: false }, // paused
-        { name: 'Gym', amount: 499, dueDay: 1, active: true }, // past dueDay 1
+        { name: 'Gym', amount: 499, dueDay: 1, active: true }, // past day 1
       ];
       // On Day 4: Spotify only (Netflix inactive, Gym past day 1)
       expect(calculatePendingSubscriptions(subscriptions, 4)).toBe(119);
+    });
+
+    it('handles empty commitments and subscriptions arrays', () => {
+      expect(calculatePendingCommitments([], 5)).toBe(0);
+      expect(calculatePendingSubscriptions([], 5)).toBe(0);
     });
   });
 
@@ -63,6 +86,11 @@ describe('PULSE Finance Mathematical Engine', () => {
 
     it('handles negative free cash when liabilities exceed liquid balance', () => {
       expect(calculateTrueFreeCash(2000, 4500)).toBe(-2500);
+    });
+
+    it('handles zero or non-numeric arguments safely', () => {
+      expect(calculateTrueFreeCash(0, 0)).toBe(0);
+      expect(calculateTrueFreeCash(null, undefined)).toBe(0);
     });
   });
 
@@ -95,6 +123,10 @@ describe('PULSE Finance Mathematical Engine', () => {
 
     it('protects against division by zero', () => {
       expect(calculateSafeDailyAllowance(1000, 0)).toBe(1000);
+    });
+
+    it('handles Day 30 calculation correctly with 1 day remaining', () => {
+      expect(calculateSafeDailyAllowance(450, 1)).toBe(450);
     });
   });
 
@@ -140,6 +172,28 @@ describe('PULSE Finance Mathematical Engine', () => {
       expect(highRisk).toBeGreaterThanOrEqual(70);
     });
 
+    it('clamps risk strictly between 5 and 99', () => {
+      const ultraLowRisk = calculateFinancialRisk({
+        liquidBalance: 10000,
+        totalLiabilities: 0,
+        safeDailyAllowance: 500,
+        runwayDays: 30,
+        daysRemaining: 1,
+        emergencySavings: 3000
+      });
+      expect(ultraLowRisk).toBeGreaterThanOrEqual(5);
+
+      const ultraHighRisk = calculateFinancialRisk({
+        liquidBalance: -5000,
+        totalLiabilities: 10000,
+        safeDailyAllowance: 0,
+        runwayDays: 0,
+        daysRemaining: 30,
+        emergencySavings: 0
+      });
+      expect(ultraHighRisk).toBeLessThanOrEqual(99);
+    });
+
     it('computes health score within bounds [10, 98]', () => {
       const health = calculateFinancialHealth({
         financialRisk: 30,
@@ -150,6 +204,17 @@ describe('PULSE Finance Mathematical Engine', () => {
       });
       expect(health).toBeGreaterThanOrEqual(10);
       expect(health).toBeLessThanOrEqual(98);
+    });
+
+    it('applies penalties when free cash is under ₹500', () => {
+      const lowFreeCashHealth = calculateFinancialHealth({
+        financialRisk: 50,
+        totalLockedSavings: 500,
+        totalSavingsTarget: 2000,
+        trueFreeCash: 200,
+        safeDailyAllowance: 80
+      });
+      expect(lowFreeCashHealth).toBeLessThan(60);
     });
   });
 
@@ -167,6 +232,20 @@ describe('PULSE Finance Mathematical Engine', () => {
       expect(result.level).toBe(5);
       expect(result.unlockedCount).toBe(5);
       expect(result.badges.every(b => b.unlocked)).toBe(true);
+    });
+
+    it('returns Level 1 for novice initial state', () => {
+      const result = calculateGamification({
+        wishlistCount: 0,
+        emergencySavings: 0,
+        pausedSubscriptionsCount: 0,
+        healthScore: 60,
+        currentDay: 1,
+        liquidBalance: 10000
+      });
+
+      expect(result.level).toBe(1);
+      expect(result.title).toContain('Broke Novice');
     });
   });
 
@@ -186,5 +265,69 @@ describe('PULSE Finance Mathematical Engine', () => {
     });
   });
 
-});
+  describe('getRiskStatusTier', () => {
+    it('returns Low Risk for score below 28', () => {
+      expect(getRiskStatusTier(20).label).toBe('Low Risk');
+    });
 
+    it('returns Moderate for score between 28 and 51', () => {
+      expect(getRiskStatusTier(35).label).toBe('Moderate');
+    });
+
+    it('returns Elevated Risk for score between 52 and 74', () => {
+      expect(getRiskStatusTier(60).label).toBe('Elevated Risk');
+    });
+
+    it('returns Critical Risk for score 75 and above', () => {
+      expect(getRiskStatusTier(80).label).toBe('Critical Risk');
+    });
+  });
+
+  describe('getHealthStatusTier', () => {
+    it('returns Zen Master for health >= 82', () => {
+      expect(getHealthStatusTier(90).label).toBe('Zen Master');
+    });
+
+    it('returns Smart Hustler for health between 68 and 81', () => {
+      expect(getHealthStatusTier(75).label).toBe('Smart Hustler');
+    });
+
+    it('returns Tightrope Walker for health between 50 and 67', () => {
+      expect(getHealthStatusTier(55).label).toBe('Tightrope Walker');
+    });
+
+    it('returns Code Red Survivor for health below 50', () => {
+      expect(getHealthStatusTier(40).label).toBe('Code Red Survivor');
+    });
+  });
+
+  describe('calculateTransactionTotals', () => {
+    it('aggregates income and spent amounts accurately', () => {
+      const txs = [
+        { type: 'income', amount: 10000 },
+        { type: 'expense', amount: 450 },
+        { type: 'commitment', amount: 2000 },
+        { type: 'income', amount: 500 }
+      ];
+      const totals = calculateTransactionTotals(txs);
+      expect(totals.income).toBe(10500);
+      expect(totals.spent).toBe(2450);
+    });
+
+    it('returns zero totals for empty array', () => {
+      expect(calculateTransactionTotals([])).toEqual({ income: 0, spent: 0 });
+    });
+  });
+
+  describe('calculateTotalLockedSavings & calculateTotalSavingsTarget', () => {
+    it('sums locked savings and total targets correctly', () => {
+      const goals = [
+        { current: 500, target: 2000 },
+        { current: 300, target: 1500 }
+      ];
+      expect(calculateTotalLockedSavings(goals)).toBe(800);
+      expect(calculateTotalSavingsTarget(goals)).toBe(3500);
+    });
+  });
+
+});

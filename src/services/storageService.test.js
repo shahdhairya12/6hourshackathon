@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { exportFinancialProfileJSON, exportTransactionsCSV } from './storageService';
+import { 
+  exportFinancialProfileJSON, 
+  exportTransactionsCSV,
+  getStorageHealth,
+  importFinancialProfileJSON
+} from './storageService';
 
 describe('Storage & Data Portability Service', () => {
   beforeEach(() => {
@@ -52,5 +57,15 @@ describe('Storage & Data Portability Service', () => {
   it('handles empty transactions gracefully during CSV export', () => {
     const success = exportTransactionsCSV([]);
     expect(success).toBe(true);
+  });
+
+  it('evaluates storage health metrics safely', () => {
+    const health = getStorageHealth();
+    expect(typeof health.available).toBe('boolean');
+    expect(typeof health.estimatedBytesUsed).toBe('number');
+  });
+
+  it('rejects importFinancialProfileJSON when null file is passed', async () => {
+    await expect(importFinancialProfileJSON(null)).rejects.toThrow('No file provided');
   });
 });
