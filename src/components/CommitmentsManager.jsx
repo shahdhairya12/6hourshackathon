@@ -2,17 +2,12 @@ import React, { useState } from 'react';
 import { 
   CheckCircle2, 
   Calendar, 
-  Zap, 
   ShieldAlert, 
   Clock, 
-  Check, 
-  ArrowRight,
-  TrendingUp,
-  Info,
-  Layers,
-  CreditCard
+  ArrowRight, 
+  Info 
 } from 'lucide-react';
-import { useFinance } from '../context/FinanceContext';
+import { useFinance } from '../hooks/useFinance';
 
 export default function CommitmentsManager() {
   const {
@@ -24,8 +19,7 @@ export default function CommitmentsManager() {
     toggleSubscription,
     pendingCommitmentsTotal,
     pendingSubscriptionsTotal,
-    totalPendingLiabilities,
-    safeDailyAllowance
+    totalPendingLiabilities
   } = useFinance();
 
   const [activeTab, setActiveTab] = useState('commitments'); // commitments | subscriptions

@@ -3,11 +3,9 @@ import {
   PlusCircle, 
   ArrowUpRight, 
   ArrowDownRight, 
-  X, 
-  Tag, 
-  FileText 
+  X 
 } from 'lucide-react';
-import { useFinance } from '../context/FinanceContext';
+import { useFinance } from '../hooks/useFinance';
 import { CATEGORIES } from '../data/initialData';
 
 export default function AddTransactionModal({ isOpen, onClose }) {
@@ -33,17 +31,23 @@ export default function AddTransactionModal({ isOpen, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4">
+    <div 
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="add-tx-title"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4"
+    >
       <div className="glass-panel p-6 max-w-md w-full border border-violet-500/30 bg-[#0c1224] space-y-4 shadow-2xl">
         
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 pb-3">
-          <div className="flex items-center gap-2 font-heading font-black text-white text-lg">
+          <div id="add-tx-title" className="flex items-center gap-2 font-heading font-black text-white text-lg">
             <PlusCircle className="w-5 h-5 text-violet-400" />
             <span>Log Financial Event (Day {currentDay})</span>
           </div>
           <button
             onClick={onClose}
+            aria-label="Close modal"
             className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10"
           >
             <X className="w-4 h-4" />
@@ -83,8 +87,9 @@ export default function AddTransactionModal({ isOpen, onClose }) {
 
           {/* Title */}
           <div>
-            <label className="text-xs text-slate-300 font-medium block mb-1">Description / Merchant</label>
+            <label htmlFor="tx-name" className="text-xs text-slate-300 font-medium block mb-1">Description / Merchant</label>
             <input
+              id="tx-name"
               type="text"
               required
               value={name}
@@ -97,7 +102,7 @@ export default function AddTransactionModal({ isOpen, onClose }) {
           {/* Amount */}
           <div>
             <div className="flex justify-between items-center mb-1">
-              <label className="text-xs text-slate-300 font-medium">Amount in Rupees (₹)</label>
+              <label htmlFor="tx-amount" className="text-xs text-slate-300 font-medium">Amount in Rupees (₹)</label>
               {type === 'expense' && (
                 <span className="text-[10px] text-slate-400 font-mono">
                   Available: ₹{liquidBalance}
@@ -107,6 +112,7 @@ export default function AddTransactionModal({ isOpen, onClose }) {
             <div className="relative">
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-sm">₹</span>
               <input
+                id="tx-amount"
                 type="number"
                 required
                 min="1"
@@ -143,8 +149,9 @@ export default function AddTransactionModal({ isOpen, onClose }) {
 
           {/* Note / Tag */}
           <div>
-            <label className="text-xs text-slate-300 font-medium block mb-1">Optional Note</label>
+            <label htmlFor="tx-note" className="text-xs text-slate-300 font-medium block mb-1">Optional Note</label>
             <input
+              id="tx-note"
               type="text"
               value={note}
               onChange={(e) => setNote(e.target.value)}

@@ -2,21 +2,11 @@ import React from 'react';
 import { 
   Sparkles, 
   ArrowRight, 
-  Flame, 
-  ShieldCheck, 
-  AlertTriangle, 
-  Calendar, 
   Dices, 
-  Clock, 
   PiggyBank, 
-  TrendingUp,
-  Bot,
-  Zap,
-  BookmarkCheck,
-  Compass,
-  ArrowUpRight
+  Zap 
 } from 'lucide-react';
-import { useFinance } from '../context/FinanceContext';
+import { useFinance } from '../hooks/useFinance';
 import VitalSignsHUD from './VitalSignsHUD';
 import ForecastChart from './ForecastChart';
 import WishlistVault from './WishlistVault';
@@ -27,17 +17,10 @@ export default function OverviewDashboard({ onOpenAddModal }) {
   const {
     currentDay,
     daysRemaining,
-    liquidBalance,
-    safeDailyAllowance,
-    financialHealth,
-    financialRisk,
     commitments,
-    subscriptions,
     savingsGoals,
     setActiveTab,
-    setSimulation,
-    wishlist,
-    simulatedImpact
+    setSimulation
   } = useFinance();
 
   // Find next unpaid commitment

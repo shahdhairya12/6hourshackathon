@@ -4,27 +4,18 @@ import {
   Flame, 
   ShieldCheck, 
   AlertTriangle, 
-  Clock, 
-  ArrowUpRight, 
-  ArrowDownRight,
-  TrendingDown,
-  Sparkles,
-  Info,
-  CreditCard,
-  Cpu
+  Info, 
+  Cpu 
 } from 'lucide-react';
-import { useFinance } from '../context/FinanceContext';
+import { useFinance } from '../hooks/useFinance';
 
 export default function VitalSignsHUD() {
   const {
     liquidBalance,
     totalLockedInSavings,
-    totalSpent,
-    totalIncome,
     totalPendingLiabilities,
     safeDailyAllowance,
     daysRemaining,
-    currentDay,
     runwayDays,
     averageDailySpend,
     financialRisk,

@@ -3,15 +3,9 @@ import {
   Receipt, 
   ArrowUpRight, 
   ArrowDownRight, 
-  Filter, 
-  Search, 
-  PieChart, 
-  Tag, 
-  Clock,
-  Sparkles,
-  SlidersHorizontal
+  Search 
 } from 'lucide-react';
-import { useFinance } from '../context/FinanceContext';
+import { useFinance } from '../hooks/useFinance';
 import { CATEGORIES } from '../data/initialData';
 
 export default function TransactionLedger({ onOpenAddModal }) {

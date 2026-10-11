@@ -1,30 +1,45 @@
-import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import confetti from 'canvas-confetti';
-import { PERSONAS, SIMULATION_PRESETS, CURVEBALL_EVENTS } from '../data/initialData';
+import { PERSONAS, CURVEBALL_EVENTS } from '../data/initialData';
 import { sound } from '../utils/audio';
-
-const FinanceContext = createContext(null);
+import { useLocalStorage } from '../hooks/useLocalStorage';
+import { FinanceContext } from './financeContextInstance';
+import {
+  calculateLiquidBalance,
+  calculatePendingCommitments,
+  calculatePendingSubscriptions,
+  calculateTrueFreeCash,
+  calculateSafeDailyAllowance,
+  calculateAverageDailySpend,
+  calculateRunwayDays,
+  calculateFinancialRisk,
+  calculateFinancialHealth,
+  calculateGamification
+} from '../utils/financeMath';
 
 export function FinanceProvider({ children }) {
-  // Current Persona
-  const [selectedPersonaId, setSelectedPersonaId] = useState(PERSONAS[0].id);
+  // Current Persona (persisted)
+  const [selectedPersonaId, setSelectedPersonaId] = useLocalStorage('pulse_persona_id', PERSONAS[0].id);
   const currentPersona = useMemo(
     () => PERSONAS.find(p => p.id === selectedPersonaId) || PERSONAS[0],
     [selectedPersonaId]
   );
 
   // Month state (Day 1 to 30)
-  const [currentDay, setCurrentDay] = useState(3);
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [currentDay, setCurrentDay] = useLocalStorage('pulse_current_day', 3);
+  const [soundEnabled, setSoundEnabled] = useLocalStorage('pulse_sound_enabled', true);
 
-  // Core financial entities initialized from persona
-  const [commitments, setCommitments] = useState(currentPersona.commitments);
-  const [subscriptions, setSubscriptions] = useState(currentPersona.subscriptions);
-  const [savingsGoals, setSavingsGoals] = useState(currentPersona.savingsGoals);
-  const [transactions, setTransactions] = useState(currentPersona.initialTransactions);
-  const [wishlist, setWishlist] = useState([]);
-  const [curveballHistory, setCurveballHistory] = useState([]);
-  const [activeTab, setActiveTab] = useState('dashboard'); // dashboard | simulator | commitments | goals | trajectory | curveball
+  // Core financial entities initialized from persona or local storage
+  const [commitments, setCommitments] = useLocalStorage('pulse_commitments', currentPersona.commitments);
+  const [subscriptions, setSubscriptions] = useLocalStorage('pulse_subscriptions', currentPersona.subscriptions);
+  const [savingsGoals, setSavingsGoals] = useLocalStorage('pulse_savings_goals', currentPersona.savingsGoals);
+  const [transactions, setTransactions] = useLocalStorage('pulse_transactions', currentPersona.initialTransactions);
+  const [wishlist, setWishlist] = useLocalStorage('pulse_wishlist', []);
+  const [curveballHistory, setCurveballHistory] = useLocalStorage('pulse_curveball_history', []);
+  
+  // UI Tabs & Modals
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [isWrapModalOpen, setIsWrapModalOpen] = useState(false);
 
   // What-If Simulation State
   const [simulation, setSimulation] = useState({
@@ -92,136 +107,96 @@ export function FinanceProvider({ children }) {
     showToast(state ? 'Sound Effects Enabled 🔊' : 'Sound Muted 🔇', 'info');
   };
 
-  // Calculations: Liquid Cash, Savings Locked, Liabilities
+  // Derived Core Financial Metrics
   const totalLockedInSavings = useMemo(() => {
     return savingsGoals.reduce((sum, g) => sum + (Number(g.current) || 0), 0);
   }, [savingsGoals]);
 
-  // Total credits and debits from transactions
-  const financialTotals = useMemo(() => {
-    let income = 0;
-    let spent = 0;
+  const liquidBalance = useMemo(() => {
+    return calculateLiquidBalance(transactions, savingsGoals);
+  }, [transactions, savingsGoals]);
 
-    transactions.forEach(t => {
-      if (t.type === 'income') {
-        income += Number(t.amount);
-      } else {
-        spent += Number(t.amount);
-      }
-    });
-
-    // Liquid balance = all income received - all transactions spent - funds locked in savings vaults
-    // Note: initial budget is an income transaction (t1).
-    const liquidBalance = income - spent - totalLockedInSavings;
-
-    return {
-      income,
-      spent,
-      liquidBalance: Math.max(-5000, liquidBalance) // allow showing negative for debt alert
-    };
-  }, [transactions, totalLockedInSavings]);
-
-  // Days left in 30-day month
   const daysRemaining = useMemo(() => {
     return Math.max(1, 30 - currentDay + 1);
   }, [currentDay]);
 
-  // Pending Commitments (Bills not yet paid and due on or after today, or overdue)
   const pendingCommitmentsList = useMemo(() => {
     return commitments.filter(c => !c.paid);
   }, [commitments]);
 
   const pendingCommitmentsTotal = useMemo(() => {
-    return pendingCommitmentsList.reduce((sum, c) => sum + Number(c.amount), 0);
-  }, [pendingCommitmentsList]);
+    return calculatePendingCommitments(commitments, currentDay);
+  }, [commitments, currentDay]);
 
-  // Active Subscriptions due for the rest of the month
   const pendingSubscriptionsList = useMemo(() => {
     return subscriptions.filter(s => s.active && s.dueDay >= currentDay);
   }, [subscriptions, currentDay]);
 
   const pendingSubscriptionsTotal = useMemo(() => {
-    return pendingSubscriptionsList.reduce((sum, s) => sum + Number(s.amount), 0);
-  }, [pendingSubscriptionsList]);
+    return calculatePendingSubscriptions(subscriptions, currentDay);
+  }, [subscriptions, currentDay]);
 
   const totalPendingLiabilities = pendingCommitmentsTotal + pendingSubscriptionsTotal;
 
-  // True Free Cash Flow
-  const trueFreeCash = financialTotals.liquidBalance - totalPendingLiabilities;
+  const trueFreeCash = useMemo(() => {
+    return calculateTrueFreeCash(liquidBalance, totalPendingLiabilities);
+  }, [liquidBalance, totalPendingLiabilities]);
 
-  // Safe Daily Allowance
-  const safeDailyAllowance = Math.max(0, Math.floor(trueFreeCash / daysRemaining));
+  const safeDailyAllowance = useMemo(() => {
+    return calculateSafeDailyAllowance(trueFreeCash, daysRemaining);
+  }, [trueFreeCash, daysRemaining]);
 
-  // Burn rate so far
   const averageDailySpend = useMemo(() => {
-    const nonBudgetExpenses = transactions
-      .filter(t => t.type !== 'income' && t.day <= currentDay)
-      .reduce((sum, t) => sum + Number(t.amount), 0);
-    return currentDay > 1 ? Math.round(nonBudgetExpenses / currentDay) : 300;
+    return calculateAverageDailySpend(transactions, currentDay);
   }, [transactions, currentDay]);
 
-  // Runway in Days
   const runwayDays = useMemo(() => {
-    if (financialTotals.liquidBalance <= 0) return 0;
-    const dailyPace = Math.max(120, averageDailySpend);
-    return Math.min(30, Math.floor(financialTotals.liquidBalance / dailyPace));
-  }, [financialTotals.liquidBalance, averageDailySpend]);
+    return calculateRunwayDays(liquidBalance, averageDailySpend, 30);
+  }, [liquidBalance, averageDailySpend]);
 
-  // Financial Risk Calculation (0 - 100)
+  const emergencyGoal = useMemo(() => {
+    return savingsGoals.find(g => g.name.toLowerCase().includes('emergency'));
+  }, [savingsGoals]);
+
   const financialRisk = useMemo(() => {
-    let score = 15; // baseline
+    return calculateFinancialRisk({
+      liquidBalance,
+      totalLiabilities: totalPendingLiabilities,
+      safeDailyAllowance,
+      runwayDays,
+      daysRemaining,
+      emergencySavings: emergencyGoal ? emergencyGoal.current : 0
+    });
+  }, [liquidBalance, totalPendingLiabilities, safeDailyAllowance, runwayDays, daysRemaining, emergencyGoal]);
 
-    // 1. Liability coverage pressure
-    if (financialTotals.liquidBalance <= 0) {
-      score += 60;
-    } else {
-      const liabilityRatio = totalPendingLiabilities / financialTotals.liquidBalance;
-      if (liabilityRatio > 0.8) score += 35;
-      else if (liabilityRatio > 0.5) score += 22;
-      else if (liabilityRatio > 0.3) score += 10;
-    }
+  const totalSavingsTarget = useMemo(() => {
+    return savingsGoals.reduce((s, g) => s + (Number(g.target) || 0), 0);
+  }, [savingsGoals]);
 
-    // 2. Daily allowance pressure
-    if (safeDailyAllowance < 100) score += 30;
-    else if (safeDailyAllowance < 180) score += 18;
-    else if (safeDailyAllowance > 300) score -= 10;
-
-    // 3. Runway deficit
-    if (runwayDays < daysRemaining) {
-      score += Math.min(25, (daysRemaining - runwayDays) * 3);
-    } else {
-      score -= 8;
-    }
-
-    // 4. Emergency fund check
-    const emergencyPot = savingsGoals.find(g => g.name.toLowerCase().includes('emergency'));
-    if (emergencyPot && emergencyPot.current < 500) {
-      score += 15;
-    } else if (emergencyPot && emergencyPot.current >= 1200) {
-      score -= 10;
-    }
-
-    return Math.max(5, Math.min(99, Math.round(score)));
-  }, [financialTotals.liquidBalance, totalPendingLiabilities, safeDailyAllowance, runwayDays, daysRemaining, savingsGoals]);
-
-  // Financial Health Score (0 - 100)
   const financialHealth = useMemo(() => {
-    // 100 - risk adjusted + savings bonus
-    const totalSavingsTarget = savingsGoals.reduce((s, g) => sumTarget(s, g), 0);
-    const savingsRatio = totalSavingsTarget > 0 ? totalLockedInSavings / totalSavingsTarget : 0.5;
+    return calculateFinancialHealth({
+      financialRisk,
+      totalLockedSavings: totalLockedInSavings,
+      totalSavingsTarget,
+      trueFreeCash,
+      safeDailyAllowance
+    });
+  }, [financialRisk, totalLockedInSavings, totalSavingsTarget, trueFreeCash, safeDailyAllowance]);
 
-    let health = 100 - (financialRisk * 0.65) + (savingsRatio * 20);
-    if (trueFreeCash < 500) health -= 15;
-    if (safeDailyAllowance < 150) health -= 10;
+  // Gamification Level and Badges
+  const gamification = useMemo(() => {
+    const pausedSubs = subscriptions.filter(s => !s.active).length;
+    return calculateGamification({
+      wishlistCount: wishlist.length,
+      emergencySavings: emergencyGoal ? emergencyGoal.current : 0,
+      pausedSubscriptionsCount: pausedSubs,
+      healthScore: financialHealth,
+      currentDay,
+      liquidBalance
+    });
+  }, [wishlist, emergencyGoal, subscriptions, financialHealth, currentDay, liquidBalance]);
 
-    return Math.max(10, Math.min(98, Math.round(health)));
-  }, [financialRisk, totalLockedInSavings, savingsGoals, trueFreeCash, safeDailyAllowance]);
-
-  function sumTarget(sum, g) {
-    return sum + (Number(g.target) || 0);
-  }
-
-  // Risk Rating Category
+  // Status Tiers
   const riskStatus = useMemo(() => {
     if (financialRisk < 28) return { label: 'Low Risk', color: '#10B981', vibe: 'Chill & Covered 🛡️', bg: 'rgba(16, 185, 129, 0.15)' };
     if (financialRisk < 52) return { label: 'Moderate', color: '#F59E0B', vibe: 'Balanced Pacing ⚡', bg: 'rgba(245, 158, 11, 0.15)' };
@@ -229,7 +204,6 @@ export function FinanceProvider({ children }) {
     return { label: 'Critical Risk', color: '#EF4444', vibe: 'Insolvency Alert 🚨', bg: 'rgba(239, 68, 68, 0.15)' };
   }, [financialRisk]);
 
-  // Health Rating Category
   const healthStatus = useMemo(() => {
     if (financialHealth >= 82) return { label: 'Zen Master', desc: 'Flawless pacing & solid cushion', color: '#10B981', emoji: '🧘' };
     if (financialHealth >= 68) return { label: 'Smart Hustler', desc: 'On track with conscious trade-offs', color: '#06B6D4', emoji: '💼' };
@@ -237,18 +211,29 @@ export function FinanceProvider({ children }) {
     return { label: 'Code Red Survivor', desc: 'Urgent expense freeze recommended', color: '#EF4444', emoji: '🚨' };
   }, [financialHealth]);
 
+  // Total debited / credited
+  const financialTotals = useMemo(() => {
+    let income = 0;
+    let spent = 0;
+    transactions.forEach(t => {
+      if (t.type === 'income') income += Number(t.amount);
+      else spent += Number(t.amount);
+    });
+    return { income, spent };
+  }, [transactions]);
+
   // SIMULATOR IMPACT ENGINE: What-If Analysis
   const simulatedImpact = useMemo(() => {
     const simAmount = Number(simulation.amount) || 0;
-    const simLiquid = financialTotals.liquidBalance - simAmount;
+    const simLiquid = liquidBalance - simAmount;
     const simFreeCash = trueFreeCash - simAmount;
-    const simSafeDaily = Math.max(0, Math.floor(simFreeCash / daysRemaining));
+    const simSafeDaily = calculateSafeDailyAllowance(simFreeCash, daysRemaining);
     const dailyDrop = safeDailyAllowance - simSafeDaily;
 
     // Simulated risk
     let simRisk = financialRisk;
     if (simAmount > 0) {
-      const dropRatio = simAmount / Math.max(1, financialTotals.liquidBalance);
+      const dropRatio = simAmount / Math.max(1, liquidBalance);
       simRisk += Math.round(dropRatio * 40);
       if (simSafeDaily < 120) simRisk += 15;
     }
@@ -261,10 +246,8 @@ export function FinanceProvider({ children }) {
       simHealth = Math.max(10, Math.min(98, simHealth - penalty));
     }
 
-    // Runway impact
-    const simRunway = averageDailySpend > 0 ? Math.max(0, Math.floor(simLiquid / averageDailySpend)) : runwayDays;
+    const simRunway = averageDailySpend > 0 ? calculateRunwayDays(simLiquid, averageDailySpend, 30) : runwayDays;
 
-    // AI Verdict Gen Z Persona Roast & Advice
     let verdict = {
       status: 'safe',
       headline: 'Budget Looks Clean 🚀',
@@ -276,14 +259,14 @@ export function FinanceProvider({ children }) {
       verdict = {
         status: 'danger',
         headline: '🚨 Financial Redline: Default Warning!',
-        analysis: `If you spend ₹${simAmount}, you will NOT have enough cash (short by ₹${Math.abs(simFreeCash)}) to clear your upcoming commitments (Rent & Bills: ₹${totalPendingLiabilities})!`,
+        analysis: `If you spend ₹${simAmount}, you will NOT have enough cash (short by ₹${Math.abs(simFreeCash)}) to clear your upcoming commitments (Bills: ₹${totalPendingLiabilities})!`,
         action: 'Crucial: Skip this purchase or unfreeze a savings goal before you hit Day 30.'
       };
     } else if (dailyDrop > 50 || simSafeDaily < 120) {
       verdict = {
         status: 'warning',
         headline: '⚠️ Harsh Leeway Squeeze!',
-        analysis: `Your daily discretionary spending drops from ₹${safeDailyAllowance}/day down to ₹${simSafeDaily}/day (-₹${dailyDrop}/day). A single auto surge or cafe meet will push you into red.`,
+        analysis: `Your daily discretionary spend drops from ₹${safeDailyAllowance}/day down to ₹${simSafeDaily}/day (-₹${dailyDrop}/day penalty). A single auto surge or cafe meet will trigger debt.`,
         action: 'Suggestion: Add to Wishlist for 48 hours, or look for a ₹' + Math.round(simAmount * 0.3) + ' alternative.'
       };
     } else if (simAmount > 1500) {
@@ -307,7 +290,7 @@ export function FinanceProvider({ children }) {
     };
   }, [
     simulation,
-    financialTotals.liquidBalance,
+    liquidBalance,
     trueFreeCash,
     daysRemaining,
     safeDailyAllowance,
@@ -318,7 +301,7 @@ export function FinanceProvider({ children }) {
     totalPendingLiabilities
   ]);
 
-  // ACTION: Advance Day (Time Travel Month Simulation)
+  // ACTIONS
   const advanceDay = (steps = 1) => {
     const nextDay = Math.min(30, currentDay + steps);
     if (nextDay === currentDay) {
@@ -329,9 +312,8 @@ export function FinanceProvider({ children }) {
     sound.playClick();
     setCurrentDay(nextDay);
 
-    // Auto-check bills due between currentDay and nextDay
-    let dueCommitments = commitments.filter(c => !c.paid && c.dueDay > currentDay && c.dueDay <= nextDay);
-    let dueSubs = subscriptions.filter(s => s.active && s.dueDay > currentDay && s.dueDay <= nextDay);
+    const dueCommitments = commitments.filter(c => !c.paid && c.dueDay > currentDay && c.dueDay <= nextDay);
+    const dueSubs = subscriptions.filter(s => s.active && s.dueDay > currentDay && s.dueDay <= nextDay);
 
     if (dueCommitments.length > 0 || dueSubs.length > 0) {
       sound.playWarning();
@@ -342,7 +324,6 @@ export function FinanceProvider({ children }) {
     }
   };
 
-  // ACTION: Pay Commitment
   const payCommitment = (commitmentId) => {
     const target = commitments.find(c => c.id === commitmentId);
     if (!target || target.paid) return;
@@ -350,7 +331,6 @@ export function FinanceProvider({ children }) {
     sound.playCoin();
     setCommitments(prev => prev.map(c => c.id === commitmentId ? { ...c, paid: true } : c));
     
-    // Log as transaction
     const newTx = {
       id: `tx_${Date.now()}`,
       day: currentDay,
@@ -364,7 +344,6 @@ export function FinanceProvider({ children }) {
     showToast(`Paid ₹${target.amount} for ${target.name}. Obligation cleared!`, 'success');
   };
 
-  // ACTION: Toggle Subscription
   const toggleSubscription = (subscriptionId) => {
     const target = subscriptions.find(s => s.id === subscriptionId);
     if (!target) return;
@@ -381,7 +360,6 @@ export function FinanceProvider({ children }) {
     }
   };
 
-  // ACTION: Commit Simulated Decision to Real Balance
   const commitSimulation = () => {
     if (!simulation.amount || Number(simulation.amount) <= 0) {
       showToast('Please enter a valid purchase amount', 'warning');
@@ -402,19 +380,17 @@ export function FinanceProvider({ children }) {
     setTransactions(prev => [newTx, ...prev]);
     showToast(`Purchased "${simulation.name}" for ₹${simulation.amount}. Live balance & allowance updated!`, 'warning');
 
-    // Trigger celebratory or warning sound depending on state
     if (simulatedImpact.simFreeCash < 0) {
       sound.playWarning();
     }
   };
 
-  // ACTION: Save Simulated Item to Wishlist (Delayed Gratification)
   const saveToWishlist = () => {
     if (!simulation.amount) return;
     sound.playSuccess();
     confetti({
-      particleCount: 40,
-      spread: 60,
+      particleCount: 50,
+      spread: 70,
       origin: { y: 0.7 }
     });
 
@@ -431,16 +407,15 @@ export function FinanceProvider({ children }) {
     showToast(`Smart Move! Delayed "${simulation.name}" to Wishlist. Saved ₹${simulation.amount}! 🛡️`, 'success');
   };
 
-  // ACTION: Deposit into Savings Goal
   const depositToGoal = (goalId, amount) => {
     const target = savingsGoals.find(g => g.id === goalId);
     if (!target) return;
     const addAmt = Number(amount);
     if (addAmt <= 0) return;
 
-    if (financialTotals.liquidBalance < addAmt) {
+    if (liquidBalance < addAmt) {
       sound.playWarning();
-      showToast(`Cannot lock ₹${addAmt}: Liquid balance is only ₹${financialTotals.liquidBalance}!`, 'warning');
+      showToast(`Cannot lock ₹${addAmt}: Liquid balance is only ₹${liquidBalance}!`, 'warning');
       return;
     }
 
@@ -449,7 +424,7 @@ export function FinanceProvider({ children }) {
       if (g.id === goalId) {
         const nextVal = Math.min(g.target, g.current + addAmt);
         if (nextVal >= g.target) {
-          confetti({ particleCount: 80, spread: 80 });
+          confetti({ particleCount: 90, spread: 90 });
           sound.playSuccess();
         }
         return { ...g, current: nextVal };
@@ -460,7 +435,6 @@ export function FinanceProvider({ children }) {
     showToast(`Locked ₹${addAmt} into "${target.name}". Safety buffer strengthened!`, 'success');
   };
 
-  // ACTION: Withdraw from Savings Goal
   const withdrawFromGoal = (goalId, amount) => {
     const target = savingsGoals.find(g => g.id === goalId);
     if (!target) return;
@@ -481,10 +455,8 @@ export function FinanceProvider({ children }) {
     showToast(`Unlocked ₹${subAmt} from "${target.name}" back into liquid cash.`, 'info');
   };
 
-  // ACTION: Trigger Curveball / Life Event Roulette
   const spinCurveball = () => {
     sound.playRoulette();
-    // Pick random curveball not recently drawn
     const available = CURVEBALL_EVENTS.filter(e => !curveballHistory.some(h => h.id === e.id));
     const pool = available.length > 0 ? available : CURVEBALL_EVENTS;
     const picked = pool[Math.floor(Math.random() * pool.length)];
@@ -492,7 +464,7 @@ export function FinanceProvider({ children }) {
     setTimeout(() => {
       if (picked.type === 'positive') {
         sound.playSuccess();
-        confetti({ particleCount: 60, spread: 70 });
+        confetti({ particleCount: 65, spread: 75 });
       } else {
         sound.playWarning();
       }
@@ -505,7 +477,6 @@ export function FinanceProvider({ children }) {
 
       setCurveballHistory(prev => [eventRecord, ...prev]);
 
-      // Apply to transactions
       const newTx = {
         id: `tx_cb_${Date.now()}`,
         day: currentDay,
@@ -521,7 +492,6 @@ export function FinanceProvider({ children }) {
     }, 450);
   };
 
-  // ACTION: Add Manual Expense or Income
   const addTransaction = (name, amount, type = 'expense', category = 'food', note = '') => {
     const val = Number(amount);
     if (!name || isNaN(val) || val <= 0) {
@@ -552,13 +522,11 @@ export function FinanceProvider({ children }) {
   return (
     <FinanceContext.Provider
       value={{
-        // Persona
         selectedPersonaId,
         currentPersona,
         switchPersona,
         resetMonth,
 
-        // Day & Sound
         currentDay,
         setCurrentDay,
         daysRemaining,
@@ -566,7 +534,6 @@ export function FinanceProvider({ children }) {
         soundEnabled,
         handleToggleSound,
 
-        // Financial Data
         commitments,
         subscriptions,
         savingsGoals,
@@ -575,9 +542,10 @@ export function FinanceProvider({ children }) {
         curveballHistory,
         activeTab,
         setActiveTab,
+        isWrapModalOpen,
+        setIsWrapModalOpen,
 
-        // Core Financial Metrics
-        liquidBalance: financialTotals.liquidBalance,
+        liquidBalance,
         totalLockedInSavings,
         totalSpent: financialTotals.spent,
         totalIncome: financialTotals.income,
@@ -594,15 +562,14 @@ export function FinanceProvider({ children }) {
         riskStatus,
         financialHealth,
         healthStatus,
+        gamification,
 
-        // What-If Simulator
         simulation,
         setSimulation,
         simulatedImpact,
         commitSimulation,
         saveToWishlist,
 
-        // Actions
         payCommitment,
         toggleSubscription,
         depositToGoal,
@@ -610,7 +577,6 @@ export function FinanceProvider({ children }) {
         spinCurveball,
         addTransaction,
 
-        // Toast
         toast,
         showToast
       }}
@@ -620,10 +586,3 @@ export function FinanceProvider({ children }) {
   );
 }
 
-export function useFinance() {
-  const context = useContext(FinanceContext);
-  if (!context) {
-    throw new Error('useFinance must be used within a FinanceProvider');
-  }
-  return context;
-}

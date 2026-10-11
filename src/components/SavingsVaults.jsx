@@ -1,26 +1,18 @@
 import React, { useState } from 'react';
 import { 
   ShieldCheck, 
-  Target, 
   PiggyBank, 
-  Plus, 
-  Minus, 
-  Sparkles, 
-  CheckCircle2, 
-  Info,
-  Lock,
-  Unlock,
-  AlertCircle,
-  Coins
+  Lock, 
+  Unlock, 
+  AlertCircle
 } from 'lucide-react';
-import { useFinance } from '../context/FinanceContext';
+import { useFinance } from '../hooks/useFinance';
 
 export default function SavingsVaults() {
   const {
     savingsGoals,
     totalLockedInSavings,
     liquidBalance,
-    safeDailyAllowance,
     depositToGoal,
     withdrawFromGoal
   } = useFinance();
@@ -210,8 +202,9 @@ export default function SavingsVaults() {
             </p>
 
             <div>
-              <label className="text-xs text-slate-300 font-medium block mb-1.5">Deposit Amount (₹)</label>
+              <label htmlFor="deposit-amount-input" className="text-xs text-slate-300 font-medium block mb-1.5">Deposit Amount (₹)</label>
               <input
+                id="deposit-amount-input"
                 type="number"
                 min="50"
                 max={liquidBalance}
@@ -279,8 +272,9 @@ export default function SavingsVaults() {
             </div>
 
             <div>
-              <label className="text-xs text-slate-300 font-medium block mb-1.5">Withdraw Amount (₹)</label>
+              <label htmlFor="withdraw-amount-input" className="text-xs text-slate-300 font-medium block mb-1.5">Withdraw Amount (₹)</label>
               <input
+                id="withdraw-amount-input"
                 type="number"
                 min="50"
                 max={withdrawModal.current}

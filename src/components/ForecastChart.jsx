@@ -1,16 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { 
-  TrendingDown, 
-  Calendar, 
   AlertTriangle, 
   CheckCircle2, 
-  Info,
-  Sparkles,
-  Zap,
-  Activity,
-  Layers
+  Activity 
 } from 'lucide-react';
-import { useFinance } from '../context/FinanceContext';
+import { useFinance } from '../hooks/useFinance';
 
 export default function ForecastChart() {
   const {
@@ -18,12 +12,9 @@ export default function ForecastChart() {
     liquidBalance,
     commitments,
     subscriptions,
-    transactions,
     averageDailySpend,
     safeDailyAllowance,
-    simulation,
-    simulatedImpact,
-    totalPendingLiabilities
+    simulatedImpact
   } = useFinance();
 
   const [hoveredDay, setHoveredDay] = useState(null);
@@ -94,7 +85,6 @@ export default function ForecastChart() {
     liquidBalance,
     commitments,
     subscriptions,
-    transactions,
     averageDailySpend,
     safeDailyAllowance,
     simulatedImpact

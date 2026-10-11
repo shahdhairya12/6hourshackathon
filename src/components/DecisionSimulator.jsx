@@ -1,30 +1,24 @@
 import React, { useState } from 'react';
 import { 
   Sparkles, 
-  ArrowRight, 
   Flame, 
   AlertTriangle, 
   ShieldCheck, 
-  Calendar, 
-  TrendingDown, 
   BookmarkCheck, 
-  CheckCircle2, 
   Sliders, 
-  Bot,
-  Zap,
-  ShoppingBag,
-  Info,
-  Scale,
-  Target
+  Bot, 
+  Zap, 
+  ShoppingBag, 
+  Info, 
+  Scale 
 } from 'lucide-react';
-import { useFinance } from '../context/FinanceContext';
+import { useFinance } from '../hooks/useFinance';
 import { SIMULATION_PRESETS, CATEGORIES } from '../data/initialData';
 
 export default function DecisionSimulator() {
   const {
     liquidBalance,
     safeDailyAllowance,
-    daysRemaining,
     financialRisk,
     financialHealth,
     simulation,
@@ -32,7 +26,6 @@ export default function DecisionSimulator() {
     simulatedImpact,
     commitSimulation,
     saveToWishlist,
-    savingsGoals,
     totalPendingLiabilities
   } = useFinance();
 
@@ -76,8 +69,6 @@ export default function DecisionSimulator() {
       active: true,
     }));
   };
-
-  const currentCategoryObj = CATEGORIES.find(c => c.id === simulation.category) || CATEGORIES[0];
 
   return (
     <div className="space-y-6">

@@ -1,28 +1,16 @@
 import React, { useState } from 'react';
 import { 
   Dices, 
-  Sparkles, 
-  AlertTriangle, 
-  ShieldCheck, 
-  TrendingUp, 
-  Clock, 
-  ArrowRight,
-  Flame,
-  Info,
-  Zap,
-  Bomb
+  ShieldCheck 
 } from 'lucide-react';
-import { useFinance } from '../context/FinanceContext';
+import { useFinance } from '../hooks/useFinance';
 import { CURVEBALL_EVENTS } from '../data/initialData';
 
 export default function CurveballRoulette() {
   const {
     spinCurveball,
     curveballHistory,
-    currentDay,
-    safeDailyAllowance,
-    savingsGoals,
-    financialRisk
+    savingsGoals
   } = useFinance();
 
   const [isSpinning, setIsSpinning] = useState(false);

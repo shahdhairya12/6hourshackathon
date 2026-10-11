@@ -1,16 +1,10 @@
 import React from 'react';
 import { 
   BookmarkCheck, 
-  Sparkles, 
-  ShieldCheck, 
-  ArrowRight, 
-  Check, 
-  Trash2,
-  TrendingUp,
-  Clock,
+  Clock, 
   Trophy
 } from 'lucide-react';
-import { useFinance } from '../context/FinanceContext';
+import { useFinance } from '../hooks/useFinance';
 
 export default function WishlistVault() {
   const { wishlist, daysRemaining } = useFinance();
